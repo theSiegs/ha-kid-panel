@@ -18,6 +18,7 @@ async def test_wrong_key_is_not_found(hass: HomeAssistant, panel, hass_client_no
         assert resp.status == 404
     resp = await client.post("/kid_panel/nope/api/action", json={})
     assert resp.status == 404
+    assert "noindex" in resp.headers["X-Robots-Tag"]
 
 
 async def test_unloaded_entry_stops_answering(hass: HomeAssistant, panel, hass_client_no_auth) -> None:
@@ -37,6 +38,8 @@ async def test_page_has_strict_headers(hass: HomeAssistant, panel, hass_client_n
     csp = resp.headers["Content-Security-Policy"]
     assert "default-src 'none'" in csp and "frame-ancestors 'none'" in csp
     assert resp.headers["Referrer-Policy"] == "no-referrer"
+    assert "noindex" in resp.headers["X-Robots-Tag"]
+    assert '<meta name="robots" content="noindex' in text
     for path in ("manifest.webmanifest", "icon-192.png", "icon-512.png"):
         assert (await client.get(f"{BASE}/{path}")).status == 200
     assert (await client.get(f"{BASE}/icon-64.png")).status == 404
