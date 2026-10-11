@@ -49,13 +49,20 @@ async def panel(hass: HomeAssistant) -> MockConfigEntry:
     hass.states.async_set("switch.bedtime", "on", {"friendly_name": "Bedtime"})
     hass.states.async_set("lock.front_door", "locked", {"friendly_name": "Front"})
     hass.states.async_set("remote.tv", "on", {"friendly_name": "TV"})
+    hass.states.async_set(
+        "cover.blinds", "open",
+        {"friendly_name": "Blinds", "current_position": 70, "supported_features": 15},
+    )
+    hass.states.async_set("cover.garage", "closed", {"friendly_name": "Garage"})
 
     entry = MockConfigEntry(
         domain=DOMAIN,
         title="Alex",
         data={CONF_ACCESS_KEY: KEY},
         options={
-            CONF_CONTROL_ENTITIES: ["light.bedroom", "switch.lamp", "media_player.speaker"],
+            CONF_CONTROL_ENTITIES: [
+                "light.bedroom", "switch.lamp", "media_player.speaker", "cover.blinds",
+            ],
             CONF_VIEW_ENTITIES: ["sensor.screen_time", "switch.bedtime"],
             CONF_REMOTE_ENTITY: "remote.tv",
             CONF_DISPLAY_NAMES: "sensor.screen_time: Screen time today\nbad line",

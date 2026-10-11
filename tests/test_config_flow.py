@@ -34,7 +34,7 @@ async def test_options_reject_lock(hass: HomeAssistant, panel) -> None:
             result["flow_id"], {CONF_CONTROL_ENTITIES: ["lock.front_door"]}
         )
     assert panel.options[CONF_CONTROL_ENTITIES] == [
-        "light.bedroom", "switch.lamp", "media_player.speaker"
+        "light.bedroom", "switch.lamp", "media_player.speaker", "cover.blinds"
     ]
 
 

@@ -11,9 +11,9 @@ token that works anywhere else.
 
 ## What a panel can do
 
-- **Control** the lights, switches, fans, input booleans, media players,
-  scenes and scripts you choose, with a fixed set of actions per type (toggle,
-  brightness, play/pause, volume, run).
+- **Control** the lights, switches, fans, covers (blinds), input booleans,
+  media players, scenes and scripts you choose, with a fixed set of actions per
+  type (toggle, brightness, open/stop/close/position, play/pause, volume, run).
 - **Show read-only values** for any entities you choose. A list in an entity's
   `apps` attribute (for example a screen-time sensor) is shown as a table.
 - **Drive a TV** through a `remote` entity with a fixed d-pad: arrows, OK,

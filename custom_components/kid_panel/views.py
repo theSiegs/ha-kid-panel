@@ -303,6 +303,11 @@ def resolve_action(
         if level is None:
             return None
         data["volume_level"] = round(level, 2)
+    elif action == "position":
+        position = _number(value, 0, 100)
+        if position is None:
+            return None
+        data["position"] = int(position)
     elif action == "mute":
         if not isinstance(value, bool):
             return None
@@ -394,6 +399,12 @@ def _control_item(entity_id: str, name: str, state: State | None) -> dict[str, A
         brightness = attrs.get("brightness")
         if isinstance(brightness, (int, float)):
             item["brightness_pct"] = round(brightness / 255 * 100)
+    elif domain == "cover":
+        features = attrs.get("supported_features", 0)
+        item["positionable"] = bool(isinstance(features, int) and features & 4)
+        position = attrs.get("current_position")
+        if isinstance(position, (int, float)):
+            item["position"] = int(position)
     elif domain == "media_player":
         volume = attrs.get("volume_level")
         if isinstance(volume, (int, float)):

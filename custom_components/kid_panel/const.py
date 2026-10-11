@@ -16,6 +16,7 @@ URL_BASE = "/kid_panel"
 # Domains a panel may be given control of. Anything else is refused when the
 # options are saved and again when a request arrives.
 CONTROL_DOMAINS = (
+    "cover",
     "fan",
     "input_boolean",
     "light",
@@ -28,6 +29,12 @@ CONTROL_DOMAINS = (
 # Panel action -> (service domain or None for the entity's own domain, service).
 # Only these actions exist; a request naming anything else is refused.
 ACTIONS: dict[str, dict[str, str]] = {
+    "cover": {
+        "open": "open_cover",
+        "close": "close_cover",
+        "stop": "stop_cover",
+        "position": "set_cover_position",
+    },
     "fan": {"toggle": "toggle"},
     "input_boolean": {"toggle": "toggle"},
     "switch": {"toggle": "toggle"},

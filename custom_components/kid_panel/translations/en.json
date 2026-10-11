@@ -21,14 +21,14 @@
           "regenerate_key": "Generate a new address (the old link stops working)"
         },
         "data_description": {
-          "control_entities": "Lights, switches, fans, media players, scenes and scripts the panel may operate.",
+          "control_entities": "Lights, switches, fans, blinds and other covers, media players, scenes and scripts the panel may operate.",
           "view_entities": "Shown with their current value. Nothing here can be changed from the panel.",
           "display_names": "One per line, as entity_id: Name"
         }
       }
     },
     "error": {
-      "unsupported_domain": "Only lights, switches, fans, input booleans, media players, scenes and scripts can be controlled."
+      "unsupported_domain": "Only lights, switches, fans, covers, input booleans, media players, scenes and scripts can be controlled."
     }
   }
 }

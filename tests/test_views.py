@@ -50,11 +50,13 @@ async def test_state_lists_only_panel_entities(hass: HomeAssistant, panel, hass_
     data = await (await client.get(f"{BASE}/api/state")).json()
     ids = {i["entity_id"] for i in data["views"] + data["controls"]} | {data["remote"]["entity_id"]}
     assert ids == {
-        "light.bedroom", "switch.lamp", "media_player.speaker",
+        "light.bedroom", "switch.lamp", "media_player.speaker", "cover.blinds",
         "sensor.screen_time", "switch.bedtime", "remote.tv",
     }
     body = str(data)
-    for leaked in ("lock.front_door", "secret_attr", "token=secret", "child_id", "com.x"):
+    blinds = next(c for c in data["controls"] if c["entity_id"] == "cover.blinds")
+    assert blinds["position"] == 70 and blinds["positionable"] is True
+    for leaked in ("lock.front_door", "cover.garage", "secret_attr", "token=secret", "child_id", "com.x"):
         assert leaked not in body
     screen = next(v for v in data["views"] if v["entity_id"] == "sensor.screen_time")
     assert screen["name"] == "Screen time today"
@@ -129,3 +131,24 @@ async def test_rate_limit(hass: HomeAssistant, panel, hass_client_no_auth) -> No
     statuses = [(await client.get(f"{BASE}/api/state")).status for _ in range(125)]
     assert statuses[:120] == [200] * 120
     assert statuses[-1] == 429
+
+
+async def test_cover_actions(hass: HomeAssistant, panel, hass_client_no_auth) -> None:
+    client = await hass_client_no_auth()
+    opens = async_mock_service(hass, "cover", "open_cover")
+    stops = async_mock_service(hass, "cover", "stop_cover")
+    positions = async_mock_service(hass, "cover", "set_cover_position")
+    assert (await _post(client, {"entity_id": "cover.blinds", "action": "open"})).status == 200
+    assert (await _post(client, {"entity_id": "cover.blinds", "action": "stop"})).status == 200
+    assert (await _post(client, {"entity_id": "cover.blinds", "action": "position", "value": 140})).status == 200
+    assert opens[0].data == {"entity_id": "cover.blinds"}
+    assert stops[0].data == {"entity_id": "cover.blinds"}
+    assert positions[0].data == {"entity_id": "cover.blinds", "position": 100}
+    for body in (
+        {"entity_id": "cover.garage", "action": "open"},          # not on the panel
+        {"entity_id": "cover.blinds", "action": "toggle"},        # not a cover action
+        {"entity_id": "cover.blinds", "action": "position", "value": "50"},
+        {"entity_id": "cover.blinds", "action": "position"},
+    ):
+        assert (await _post(client, body)).status == 403, body
+    assert len(opens) == 1 and len(positions) == 1
