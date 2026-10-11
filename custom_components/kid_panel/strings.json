@@ -1,0 +1,34 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "New kid panel",
+        "description": "Name the panel. Choose what it shows and controls afterwards, under Configure.",
+        "data": { "name": "Panel name" }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Panel contents",
+        "description": "Panel address (treat it like a password): {url}",
+        "data": {
+          "control_entities": "Can control",
+          "view_entities": "Can see (read-only)",
+          "remote_entity": "TV remote (d-pad)",
+          "display_names": "Display names",
+          "regenerate_key": "Generate a new address (the old link stops working)"
+        },
+        "data_description": {
+          "control_entities": "Lights, switches, fans, media players, scenes and scripts the panel may operate.",
+          "view_entities": "Shown with their current value. Nothing here can be changed from the panel.",
+          "display_names": "One per line, as entity_id: Name"
+        }
+      }
+    },
+    "error": {
+      "unsupported_domain": "Only lights, switches, fans, input booleans, media players, scenes and scripts can be controlled."
+    }
+  }
+}

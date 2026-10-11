@@ -1,0 +1,13 @@
+{
+  "domain": "kid_panel",
+  "name": "Kid Panel",
+  "codeowners": ["@theSiegs"],
+  "config_flow": true,
+  "dependencies": ["http"],
+  "documentation": "https://github.com/theSiegs/ha-kid-panel",
+  "integration_type": "service",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/theSiegs/ha-kid-panel/issues",
+  "requirements": [],
+  "version": "0.1.0"
+}

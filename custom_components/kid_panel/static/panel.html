@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<meta name="referrer" content="no-referrer">
+<title>__TITLE__</title>
+<link rel="manifest" href="__BASE__/manifest.webmanifest">
+<link rel="icon" href="__BASE__/icon-192.png">
+<style nonce="__NONCE__">
+  :root {
+    --bg: #0e1116; --card: #171b22; --card-2: #1f242d; --line: #2a303a;
+    --text: #e7eaf0; --muted: #8b93a1; --accent: #4f8cff; --on: #ffb547;
+    --bad: #ff6b6b; --radius: 16px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  body { padding: max(16px, env(safe-area-inset-top)) 16px 32px; max-width: 640px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 4px 0 18px; }
+  h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 26px 0 10px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; }
+  .wide { grid-column: 1 / -1; }
+  .label { color: var(--muted); font-size: 13px; }
+  .value { font-size: 22px; font-weight: 600; margin-top: 2px; }
+  .apps { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 14px; }
+  .apps td { padding: 5px 0; border-top: 1px solid var(--line); }
+  .apps td:last-child { text-align: right; color: var(--muted); white-space: nowrap; padding-left: 12px; }
+  button { font: inherit; color: var(--text); background: var(--card-2); border: 1px solid var(--line);
+    border-radius: 12px; padding: 10px 12px; cursor: pointer; touch-action: manipulation; }
+  button:active { transform: scale(.97); }
+  button:disabled { opacity: .4; }
+  .tile { display: flex; flex-direction: column; gap: 10px; text-align: left; width: 100%; }
+  .tile.on { border-color: var(--on); }
+  .tile .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .tile .name { font-weight: 600; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--line); flex: none; }
+  .on .dot { background: var(--on); box-shadow: 0 0 10px var(--on); }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btns button { flex: 1; min-width: 56px; }
+  .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .pad button { aspect-ratio: 1.4; font-size: 20px; }
+  .muted { color: var(--muted); }
+  .status { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--bad);
+    color: #fff; padding: 8px 14px; border-radius: 999px; font-size: 14px; display: none; }
+  .status.show { display: block; }
+</style>
+</head>
+<body>
+<h1 id="title">__TITLE__</h1>
+<div id="views-section"><h2>Today</h2><div class="grid" id="views"></div></div>
+<div id="controls-section"><h2>Controls</h2><div class="grid" id="controls"></div></div>
+<div id="remote-section"><h2 id="remote-title">TV remote</h2><div class="card"><div class="pad" id="pad"></div></div></div>
+<div class="status" id="status"></div>
+<script nonce="__NONCE__">
+"use strict";
+const BASE = "__BASE__";
+const POLL_MS = 4000;
+let state = null;
+let timer = null;
+let busy = false;
+let dragging = false;
+
+function el(tag, cls, text) {
+  const node = document.createElement(tag);
+  if (cls) node.className = cls;
+  if (text !== undefined) node.textContent = text;
+  return node;
+}
+
+function duration(minutes) {
+  const m = Math.max(0, Math.round(minutes));
+  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
+}
+
+function formatValue(item) {
+  const raw = item.state;
+  if (raw === "unavailable" || raw === "unknown") return "—";
+  const num = Number(raw);
+  if (item.unit === "min" && Number.isFinite(num)) return duration(num);
+  if (item.device_class === "timestamp") {
+    const d = new Date(raw);
+    if (!isNaN(d)) return d.toLocaleString([], { weekday: "short", hour: "numeric", minute: "2-digit" });
+  }
+  if (/^\d{2}:\d{2}:\d{2}$/.test(raw)) {
+    const [h, m] = raw.split(":").map(Number);
+    const d = new Date(); d.setHours(h, m, 0, 0);
+    return d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  }
+  if (raw === "on" || raw === "off") return raw === "on" ? "On" : "Off";
+  return item.unit ? `${raw} ${item.unit}` : raw;
+}
+
+function flash(message) {
+  const s = document.getElementById("status");
+  s.textContent = message;
+  s.classList.add("show");
+  setTimeout(() => s.classList.remove("show"), 2500);
+}
+
+async function act(entityId, action, value) {
+  busy = true;
+  try {
+    const res = await fetch(`${BASE}/api/action`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entity_id: entityId, action, value }),
+      cache: "no-store",
+    });
+    if (!res.ok) flash(res.status === 429 ? "Slow down a little" : "That didn't work");
+  } catch (e) {
+    flash("Can't reach home");
+  } finally {
+    busy = false;
+    refresh();
+  }
+}
+
+function renderViews(views) {
+  const box = document.getElementById("views");
+  box.replaceChildren();
+  document.getElementById("views-section").hidden = views.length === 0;
+  for (const item of views) {
+    const card = el("div", "card" + (item.apps ? " wide" : ""));
+    card.append(el("div", "label", item.name), el("div", "value", formatValue(item)));
+    if (item.apps && item.apps.length) {
+      const table = el("table", "apps");
+      for (const app of item.apps) {
+        const tr = el("tr");
+        tr.append(el("td", "", app.name), el("td", "", duration(app.minutes)));
+        table.append(tr);
+      }
+      card.append(table);
+    }
+    box.append(card);
+  }
+}
+
+function holdWhileDragging(slider) {
+  slider.addEventListener("pointerdown", () => { dragging = true; });
+  for (const ev of ["pointerup", "pointercancel"]) slider.addEventListener(ev, () => { dragging = false; });
+}
+
+function lightTile(item) {
+  const on = item.state === "on";
+  const card = el("div", "card tile" + (on ? " on" : "") + (item.dimmable ? " wide" : ""));
+  const head = el("button", "row");
+  head.append(el("span", "name", item.name), el("span", "dot"));
+  head.addEventListener("click", () => act(item.entity_id, "toggle"));
+  card.append(head);
+  if (item.dimmable) {
+    const slider = el("input");
+    slider.type = "range"; slider.min = 1; slider.max = 100;
+    slider.value = on ? (item.brightness_pct || 100) : 1;
+    slider.setAttribute("aria-label", `${item.name} brightness`);
+    holdWhileDragging(slider);
+    slider.addEventListener("change", () => { dragging = false; act(item.entity_id, "brightness", Number(slider.value)); });
+    card.append(slider);
+  }
+  return card;
+}
+
+function toggleTile(item) {
+  const on = item.state === "on";
+  const card = el("button", "card tile" + (on ? " on" : ""));
+  const row = el("div", "row");
+  row.append(el("span", "name", item.name), el("span", "dot"));
+  card.append(row, el("span", "label", item.state === "unavailable" ? "Offline" : on ? "On" : "Off"));
+  card.disabled = item.state === "unavailable";
+  card.addEventListener("click", () => act(item.entity_id, "toggle"));
+  return card;
+}
+
+function runTile(item, action) {
+  const card = el("button", "card tile");
+  card.append(el("span", "name", item.name), el("span", "label", "Tap to run"));
+  card.addEventListener("click", () => act(item.entity_id, action));
+  return card;
+}
+
+function mediaTile(item) {
+  const card = el("div", "card tile wide" + (item.state === "playing" ? " on" : ""));
+  const row = el("div", "row");
+  row.append(el("span", "name", item.name), el("span", "label", item.state === "unavailable" ? "Offline" : item.state));
+  card.append(row);
+  if (item.media_title) {
+    card.append(el("div", "muted", item.media_artist ? `${item.media_title} · ${item.media_artist}` : item.media_title));
+  }
+  const btns = el("div", "btns");
+  const add = (label, action, value, aria) => {
+    const b = el("button", "", label);
+    b.setAttribute("aria-label", aria);
+    b.addEventListener("click", () => act(item.entity_id, action, value));
+    btns.append(b);
+  };
+  if (item.state === "off") {
+    add("⏻ On", "turn_on", undefined, "Turn on");
+  } else {
+    add("⏮", "previous", undefined, "Previous");
+    add("⏯", "play_pause", undefined, "Play or pause");
+    add("⏭", "next", undefined, "Next");
+    add("🔉", "volume_down", undefined, "Volume down");
+    add("🔊", "volume_up", undefined, "Volume up");
+    add(item.muted ? "🔈" : "🔇", "mute", !item.muted, item.muted ? "Unmute" : "Mute");
+  }
+  card.append(btns);
+  if (typeof item.volume === "number" && item.state !== "off") {
+    const slider = el("input");
+    slider.type = "range"; slider.min = 0; slider.max = 100;
+    slider.value = Math.round(item.volume * 100);
+    slider.setAttribute("aria-label", `${item.name} volume`);
+    holdWhileDragging(slider);
+    slider.addEventListener("change", () => { dragging = false; act(item.entity_id, "volume_set", Number(slider.value) / 100); });
+    card.append(slider);
+  }
+  return card;
+}
+
+function renderControls(controls) {
+  const box = document.getElementById("controls");
+  box.replaceChildren();
+  document.getElementById("controls-section").hidden = controls.length === 0;
+  for (const item of controls) {
+    let tile;
+    switch (item.domain) {
+      case "light": tile = lightTile(item); break;
+      case "media_player": tile = mediaTile(item); break;
+      case "scene": tile = runTile(item, "activate"); break;
+      case "script": tile = runTile(item, "run"); break;
+      default: tile = toggleTile(item);
+    }
+    box.append(tile);
+  }
+}
+
+function renderRemote(remote) {
+  const section = document.getElementById("remote-section");
+  section.hidden = !remote;
+  if (!remote) return;
+  document.getElementById("remote-title").textContent = remote.name;
+  const pad = document.getElementById("pad");
+  if (pad.childElementCount) return;
+  const keys = [
+    ["↩", "BACK", "Back"], ["▲", "DPAD_UP", "Up"], ["⌂", "HOME", "Home"],
+    ["◀", "DPAD_LEFT", "Left"], ["OK", "DPAD_CENTER", "Select"], ["▶", "DPAD_RIGHT", "Right"],
+    ["⏪", "MEDIA_REWIND", "Rewind"], ["▼", "DPAD_DOWN", "Down"], ["⏩", "MEDIA_FAST_FORWARD", "Fast forward"],
+  ];
+  for (const [label, command, aria] of keys) {
+    const b = el("button", "", label);
+    b.setAttribute("aria-label", aria);
+    b.addEventListener("click", () => act(remote.entity_id, "command", command));
+    pad.append(b);
+  }
+}
+
+function render() {
+  if (!state) return;
+  renderViews(state.views);
+  renderControls(state.controls);
+  renderRemote(state.remote);
+}
+
+async function refresh() {
+  if (busy || dragging) return;
+  try {
+    const res = await fetch(`${BASE}/api/state`, { cache: "no-store" });
+    if (!res.ok) { if (res.status === 404) flash("This link no longer works"); return; }
+    state = await res.json();
+    render();
+  } catch (e) {
+    flash("Can't reach home");
+  }
+}
+
+function schedule() {
+  clearInterval(timer);
+  if (document.visibilityState === "visible") {
+    refresh();
+    timer = setInterval(refresh, POLL_MS);
+  }
+}
+
+document.addEventListener("visibilitychange", schedule);
+schedule();
+</script>
+</body>
+</html>
