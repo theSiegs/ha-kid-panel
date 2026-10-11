@@ -4,7 +4,9 @@
       "user": {
         "title": "New kid panel",
         "description": "Name the panel. Choose what it shows and controls afterwards, under Configure.",
-        "data": { "name": "Panel name" }
+        "data": {
+          "name": "Panel name"
+        }
       }
     }
   },
@@ -29,6 +31,22 @@
     },
     "error": {
       "unsupported_domain": "Only lights, switches, fans, covers, input booleans, media players, scenes and scripts can be controlled."
+    }
+  },
+  "services": {
+    "send_link": {
+      "name": "Send panel link",
+      "description": "Sends a panel's address to a device through a notify action, so the key never has to be copied by hand.",
+      "fields": {
+        "panel": {
+          "name": "Panel",
+          "description": "The panel whose address to send."
+        },
+        "notify_service": {
+          "name": "Notify action",
+          "description": "Name of the notify action that reaches the device, without the notify. prefix (e.g. mobile_app_alex_phone)."
+        }
+      }
     }
   }
 }

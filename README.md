@@ -44,6 +44,11 @@ panel's **Configure** and tick **Generate a new address**.
 
 Display names go one per line as `entity_id: Name`.
 
+To put the address on a device without copying the key, run the admin-only
+action **Kid Panel: Send panel link** with the panel and a notify action that
+reaches the device (for example `mobile_app_alex_phone`). The notification opens
+the panel when tapped.
+
 ## Limits
 
 - The panel shows current values only; it has no history.

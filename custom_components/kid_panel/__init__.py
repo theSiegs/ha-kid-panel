@@ -14,14 +14,16 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.typing import ConfigType
 
 from .const import DOMAIN
+from .services import async_register_services
 from .views import async_register_views
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
 
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
-    """Register the panel's HTTP views once, for every entry to share."""
+    """Register the panel's HTTP views and actions once, for every entry to share."""
     async_register_views(hass)
+    async_register_services(hass)
     return True
 
 

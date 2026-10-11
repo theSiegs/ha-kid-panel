@@ -1,0 +1,12 @@
+send_link:
+  fields:
+    panel:
+      required: true
+      selector:
+        config_entry:
+          integration: kid_panel
+    notify_service:
+      required: true
+      example: mobile_app_alex_phone
+      selector:
+        text:
