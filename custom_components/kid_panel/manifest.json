@@ -3,11 +3,11 @@
   "name": "Kid Panel",
   "codeowners": ["@theSiegs"],
   "config_flow": true,
-  "dependencies": ["http"],
+  "dependencies": ["http", "persistent_notification"],
   "documentation": "https://github.com/theSiegs/ha-kid-panel",
   "integration_type": "service",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/theSiegs/ha-kid-panel/issues",
   "requirements": [],
-  "version": "0.3.0"
+  "version": "0.4.0"
 }

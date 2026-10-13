@@ -49,6 +49,34 @@ action **Kid Panel: Send panel link** with the panel and a notify action that
 reaches the device (for example `mobile_app_alex_phone`). The notification opens
 the panel when tapped.
 
+## Pairing a device with a code
+
+Typing a panel's address on a watch is no fun. Run the admin-only action
+**Kid Panel: Create pairing code** for the panel: it returns a 6-digit code
+(also shown in Home Assistant's notifications) that works once, for 10
+minutes. Enter it in the watch app, or open `/kid_panel/pair` in the device's
+browser. Wrong codes count as failed logins, and a run of them pauses pairing
+for a while.
+
+## Watch app (Wear OS)
+
+`wear/` is a small standalone Wear OS app: a tile with the panel's first two
+values and up to two one-tap controls, and an app with everything on the panel
+(lights, scenes, covers, media, the TV d-pad). It pairs with a code and holds
+no Home Assistant credential.
+
+Build it with the address the watch reaches Home Assistant at, in
+`wear/local.properties` (not committed):
+
+```
+kidpanel.server=https://your-home-assistant.example
+```
+
+then `./gradlew bundleRelease` with an upload key configured the same way
+(`kidpanel.keystore`, `kidpanel.keystorePassword`, `kidpanel.keyAlias`,
+`kidpanel.keyPassword`), and publish through Google Play (an internal testing
+track works well for a family).
+
 ## Limits
 
 - The panel shows current values only; it has no history.

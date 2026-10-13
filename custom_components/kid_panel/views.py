@@ -34,6 +34,7 @@ from homeassistant.core import Context, HomeAssistant, State, callback
 from homeassistant.exceptions import HomeAssistantError
 
 from .config_flow import parse_display_names
+from .pairing import PairApiView, PairPageView
 from .const import (
     ACTIONS,
     CONF_ACCESS_KEY,
@@ -72,7 +73,10 @@ def async_register_views(hass: HomeAssistant) -> None:
         return
     hass.data[_VIEWS_REGISTERED] = True
     limiter = _RateLimiter()
+    # Pairing first: its fixed paths must win over the panel's /kid_panel/<key>
     for view in (
+        PairPageView(hass, _STATIC / "pair.html"),
+        PairApiView(hass),
         PanelPageView(hass, limiter),
         PanelManifestView(hass, limiter),
         PanelIconView(hass, limiter),

@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1116">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex, noai, noimageai">
+<title>Pair</title>
+<style nonce="__NONCE__">
+  html, body { margin: 0; background: #0e1116; color: #e7eaf0; font: 16px/1.4 system-ui, sans-serif; }
+  body { padding: 14vw 12vw; text-align: center; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  input { width: 100%; box-sizing: border-box; font-size: 26px; letter-spacing: 6px; text-align: center;
+    padding: 10px; border-radius: 12px; border: 1px solid #2a303a; background: #171b22; color: #e7eaf0; }
+  button { margin-top: 12px; width: 100%; font-size: 18px; padding: 10px; border-radius: 12px; border: 0;
+    background: #4f8cff; color: #fff; }
+  #msg { margin-top: 10px; font-size: 14px; color: #ff6b6b; min-height: 1.4em; }
+</style>
+</head>
+<body>
+<h1>Enter pairing code</h1>
+<input id="code" inputmode="numeric" pattern="[0-9]*" maxlength="6" autocomplete="one-time-code" autofocus>
+<button id="go">Pair</button>
+<div id="msg"></div>
+<script nonce="__NONCE__">
+"use strict";
+const input = document.getElementById("code");
+const msg = document.getElementById("msg");
+async function pair() {
+  const code = input.value.replace(/\D/g, "");
+  if (code.length !== 6) { msg.textContent = "The code has 6 digits"; return; }
+  msg.textContent = "";
+  try {
+    const res = await fetch("pair/api", { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code }), cache: "no-store" });
+    if (res.ok) { const data = await res.json(); location.replace(data.path); return; }
+    msg.textContent = res.status === 429 ? "Too many tries; wait a few minutes" : "That code didn't work";
+  } catch (e) {
+    msg.textContent = "Can't reach home";
+  }
+}
+document.getElementById("go").addEventListener("click", pair);
+input.addEventListener("keydown", (e) => { if (e.key === "Enter") pair(); });
+</script>
+</body>
+</html>

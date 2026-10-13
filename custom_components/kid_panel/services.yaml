@@ -10,3 +10,10 @@ send_link:
       example: mobile_app_alex_phone
       selector:
         text:
+create_pairing_code:
+  fields:
+    panel:
+      required: true
+      selector:
+        config_entry:
+          integration: kid_panel

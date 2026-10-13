@@ -47,6 +47,16 @@
           "description": "Name of the notify action that reaches the device, without the notify. prefix (e.g. mobile_app_alex_phone)."
         }
       }
+    },
+    "create_pairing_code": {
+      "name": "Create pairing code",
+      "description": "Makes a 6-digit code, valid once for 10 minutes, that a device (the watch app, or a browser at /kid_panel/pair) trades for the panel's address. The code is also shown in Home Assistant's notifications.",
+      "fields": {
+        "panel": {
+          "name": "Panel",
+          "description": "The panel to pair a device with."
+        }
+      }
     }
   }
 }
